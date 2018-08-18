@@ -1,0 +1,67 @@
+Now for this project, instead of getting the desired color from the user via the serial port, we will set the LED color by having it match colored cards we place in front of the sensor. So, we will need to figure out how to operate the sensor. It is really pretty straighforward. First up, we have to hook it to the arduino. That is probably easiest done by following this table, rather than me trying to draw a picture:
+
+
+Connecting the Color Sensor to the Arduino
+
+   Color Sensor Pin                       Arduino Pin:
+
+       S0                                      GND
+       S1                                      5V
+       S2                                     pin 7
+       S3                                     pin 8
+       OUT                                    pin 4
+       VCC                                    5V
+       GND                                    GND
+
+
+Hopefully that is clear. Remember, you must use the male/female wires described above to connect
+the Color Sensor to the Arduino. Unfortunately, the sensor is too big to connect to a standard size
+breadboard. Use the table above to carefully make the connections, but after you are done your
+circuit should look like thE SETUP PHOTO
+
+There are lots of wires, so double check your work against the table above.
+
+Now,   this is the way the senor works. It will make three different readings indicating the relative “strength” of the three primary colors  . . . Red, Green and Blue.  Never fear, if you know the strength of the primary colors, you can gure out any color as they will just be different “mixes” of red,  green and blue.
+
+Which color is read depends on the voltages you write to the S2 and S3 pins, according to this table:
+
+S2          S3            Color Read
+LOW         LOW           Red
+LOW         HIGH          Blue
+HIGH        HIGH          Green
+
+To actually make a measurement, you need to select which color strength you want to read by doing
+digital writes to pins S2 and S3 according to the pins above. Then you read the color strength on the sensor OUT pin, which we have connected to Arduino pin 4. To make the measurement, you need to
+make a pulseIn measurement at pin 4 on the arduino. The pulseIn measurement is an arduino
+command that looks at the pin you specify, and looks for a pulse, and returns to you a number
+representing the length in microseconds of the pulse seen at the pin speci ed. For example, lets say
+we already declared a variable pulseWidth to hold the measured value. The following code would
+allow us to measure the pulseWidth at the outPin (make sure you have declared both variables, and
+you should set the pinMode of outPin to be an INPUT,  since you are reading from it;
+
+Arduino
+pulseWidth = pulseIn(outPin, LOW);    //Measure length of a LOW pulse at pin outPin
+
+
+ This measurement will return a value between 0 an 102,400. Because of this, you need to be sure to
+declare pulseWidth variable an unsigned int. Normal integers can only hold numbers up to +/- 32,768
+an unsigned int allows only positive numbers but allows numbers up to 4,294,967,295. 
+The number that is returned which we put in the variable pulseWidth above can be interpreted as
+such: The lower the number, the stronger the color being read. The larger the number, the weaker
+the color.
+We need to somehow convert this rather odd number into something that means something in the
+real world. Well, when we write values to an RGB LED we want them to be between 0 and 255.  Also,
+that is a fairly standard scale to report RGB colors . . . by giving the relative strength of the
+compoents of R, G, and B on a scale from 0 to 255. First we need to convert 0 to 102,400 to this
+range.  102,400/400 = 256. Almost exactly what we want! But we need to subtract one. So, we could
+say that rColorStrength = (pulseWidth/400) – 1. That gets us a number between 0 and 255. Only
+problem is, remember that in the original pulseWidth, big numbers mean weak colors and small
+numbers mean strong colors, so we need to x that. We could x it by now saying:
+rColorStrength = (255 – rColorStrength);
+That simply adjusts things so that big numbers now mean strong colors. Also, you can see this
+example would be for reading red. You would need to repeat by setting S2 and S3 to also create
+gColorStrenght and bColorStrength for green and blue.
+So, with this little bit of math we should have what we need to actually read R, G, and B values that
+fairly accurately represent the color the sensor is seeing. In the video I go through the code. I am not
+posting the code on this one because you need to think through it and if you get stuck, the video
+shows you each step
